@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Would you go on a date with me?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ---------------------------------------------------------
+     EDIT ME: change these to personalize the whole experience
+     --------------------------------------------------------- */
+  :root {
+    --ink: #3a2a2c;
+    --paper: #faf5ef;
+    --card: #ffffff;
+    --line: #ead9d0;
+    --wine: #7a1f3d;
+    --wine-deep: #5c1730;
+    --gold: #c79a4b;
+    --muted: #8a7973;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--paper);
+    background-image:
+      radial-gradient(circle at 15% 10%, #f3e4d8 0%, transparent 45%),
+      radial-gradient(circle at 85% 90%, #f3e0e6 0%, transparent 45%);
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    padding: 32px 26px 28px;
+    box-shadow: 0 30px 60px -30px rgba(90, 40, 50, 0.35);
+    position: relative;
+    overflow: hidden;
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 22px;
+  }
+  .dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--line);
+    transition: background .25s, transform .25s;
+  }
+  .dots span.on { background: var(--wine); transform: scale(1.3); }
+
+  .screen {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    animation: rise .35s ease;
+  }
+  .screen.active { display: flex; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  h1, h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 0 0 6px;
+    text-align: center;
+    color: var(--wine-deep);
+  }
+  h1 { font-size: 26px; }
+  h2 { font-size: 22px; }
+
+  .sub {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13.5px;
+    margin: 0 0 24px;
+    line-height: 1.5;
+  }
+
+  .spacer { flex: 1; }
+
+  /* Buttons */
+  .btn {
+    display: block;
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    padding: 15px 20px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: center;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary {
+    background: linear-gradient(180deg, var(--wine) 0%, var(--wine-deep) 100%);
+    color: #fff;
+    box-shadow: 0 12px 24px -10px rgba(122,31,61,0.6);
+  }
+  .btn-primary:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btn-primary:not(:disabled):hover { transform: translateY(-1px); }
+  .btn-ghost {
+    background: none;
+    color: var(--muted);
+    font-size: 13.5px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 10px;
+  }
+
+  /* Screen 1: the ask */
+  #screen-ask { justify-content: center; }
+  .ask-actions { margin-top: 28px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  #noBtn { transition: transform .15s ease; }
+  .wrong-answer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--wine);
+    height: 18px;
+    margin-top: 10px;
+  }
+
+  /* Screen 2: food grid */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .opt {
+    border: 1.5px solid var(--line);
+    background: #fffdfb;
+    border-radius: 16px;
+    padding: 18px 10px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, transform .1s;
+  }
+  .opt .emoji { font-size: 26px; display: block; margin-bottom: 8px; }
+  .opt .label { font-size: 13.5px; font-weight: 600; }
+  .opt:hover { transform: translateY(-2px); }
+  .opt.selected {
+    border-color: var(--gold);
+    background: #fbf1de;
+  }
+
+  /* Screen 3: pick a night */
+  .night-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .night {
+    border: 1.5px solid var(--line);
+    border-radius: 16px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .night .day { font-weight: 700; font-size: 14.5px; }
+  .night .time { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .night .tag { font-size: 12.5px; color: var(--wine); margin-top: 4px; }
+  .night.selected { border-color: var(--gold); background: #fbf1de; }
+
+  /* Screen 4: waitlist */
+  .note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+  .waitlist-label {
+    font-size: 11.5px;
+    letter-spacing: .06em;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .waitlist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+  .wrow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 11px 14px;
+    border-radius: 12px;
+    border: 1.5px solid var(--line);
+    font-size: 14px;
+  }
+  .wrow .who { font-weight: 600; }
+  .wrow .status { font-size: 12px; color: var(--muted); }
+  .wrow.me {
+    border-color: var(--gold);
+    background: #fbf1de;
+  }
+  .wrow.me .status { color: var(--wine); font-weight: 600; }
+
+  /* Screen 5: checkout */
+  .checkout-banner {
+    background: linear-gradient(180deg, var(--wine) 0%, var(--wine-deep) 100%);
+    color: #fff;
+    font-size: 11.5px;
+    letter-spacing: .08em;
+    font-weight: 700;
+    text-align: center;
+    padding: 9px;
+    border-radius: 10px;
+    margin: -6px -6px 18px;
+  }
+  .order-summary {
+    background: #fbf6f0;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+  }
+  .order-summary .row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .order-summary .fine {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  label {
+    display: block;
+    font-size: 10.5px;
+    letter-spacing: .06em;
+    color: var(--muted);
+    font-weight: 700;
+    margin: 12px 0 5px;
+  }
+  input {
+    width: 100%;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    background: #fffdfb;
+  }
+  input:focus { outline: none; border-color: var(--wine); }
+  .row2 { display: flex; gap: 10px; }
+  .row2 > div { flex: 1; }
+  .ssl {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--muted);
+    margin: 14px 0 16px;
+  }
+
+  /* Final */
+  #screen-final { justify-content: center; text-align: center; }
+  .recap {
+    background: #fbf6f0;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+    margin: 18px 0 22px;
+    text-align: left;
+  }
+  .recap div { font-size: 14px; margin-bottom: 8px; }
+  .recap b { color: var(--wine-deep); }
+
+  /* Modal (fake payment result) */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(58, 42, 44, .55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 20px;
+    padding: 26px 22px;
+    max-width: 320px;
+    text-align: center;
+  }
+  .modal p { font-size: 14.5px; line-height: 1.5; margin: 10px 0 18px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="card">
+    <div class="dots">
+      <span data-step="0"></span><span data-step="1"></span><span data-step="2"></span><span data-step="3"></span><span data-step="4"></span><span data-step="5"></span>
+    </div>
+
+    <!-- SCREEN 0 — who are you -->
+    <div class="screen active" id="screen-name" data-step="0">
+      <h2>First, who are you?</h2>
+      <div class="sub">Pick your name from the list.</div>
+      <div class="night-list" id="nameList"></div>
+      <div class="spacer"></div>
+      <button class="btn btn-primary" id="nameNext" disabled onclick="go('ask')">Continue</button>
+    </div>
+
+    <!-- SCREEN 1 — the ask -->
+    <div class="screen" id="screen-ask" data-step="1">
+      <h1>Would you go on a date with me?</h1>
+      <div class="spacer"></div>
+      <div class="ask-actions">
+        <button class="btn btn-primary" onclick="go('food')">Yes</button>
+        <button class="btn-ghost" id="noBtn">No</button>
+        <div class="wrong-answer" id="wrongMsg"></div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2 — food -->
+    <div class="screen" id="screen-food" data-step="2">
+      <h2>Ok, so what are we eating?</h2>
+      <div class="sub">Pick one, I'm easy either way.</div>
+      <div class="grid" id="foodGrid"></div>
+      <div class="spacer"></div>
+      <button class="btn btn-primary" id="foodNext" disabled onclick="go('night')">Next</button>
+    </div>
+
+    <!-- SCREEN 3 — night -->
+    <div class="screen" id="screen-night" data-step="3">
+      <h2>Pick a night 🌙</h2>
+      <div class="sub">Whatever works best for you.</div>
+      <div class="night-list" id="nightList"></div>
+      <div class="spacer"></div>
+      <button class="btn btn-primary" id="nightNext" disabled onclick="renderWaitlist(); go('waitlist')">Next</button>
+    </div>
+
+    <!-- SCREEN 4 — waitlist -->
+    <div class="screen" id="screen-waitlist" data-step="4">
+      <h2>You're officially on the list! 🎉</h2>
+      <div class="note" id="waitlistNote"></div>
+      <div class="waitlist-label">CURRENT WAITLIST</div>
+      <div class="waitlist" id="waitlistRows"></div>
+      <div class="spacer"></div>
+      <button class="btn btn-primary" onclick="go('checkout')">Want to skip the line?</button>
+    </div>
+
+    <!-- SCREEN 5 — checkout -->
+    <div class="screen" id="screen-checkout" data-step="5">
+      <div class="checkout-banner">SECURE CHECKOUT</div>
+      <div class="order-summary">
+        <div class="row"><span id="upgradeLabel">Priority Upgrade</span><span id="upgradePrice">$200</span></div>
+        <div class="fine">One-time down payment · Non-refundable</div>
+      </div>
+
+      <form id="payForm" onsubmit="return fakePay(event)">
+        <label>Cardholder Name</label>
+        <input type="text" placeholder="Full name on card" required>
+
+        <label>Card Number</label>
+        <input type="text" id="cardNum" placeholder="1234 5678 9012 3456" maxlength="19" required>
+
+        <div class="row2">
+          <div>
+            <label>Expiry Date</label>
+            <input type="text" id="cardExp" placeholder="MM / YY" maxlength="7" required>
+          </div>
+          <div>
+            <label>CVV</label>
+            <input type="text" id="cardCvv" placeholder="•••" maxlength="4" required>
+          </div>
+        </div>
+
+        <label>Billing Zip Code</label>
+        <input type="text" placeholder="Zip code" required>
+
+        <div class="ssl">🔒 256-bit SSL encrypted · Your info is safe</div>
+        <button class="btn btn-primary" id="payBtn" type="submit">Pay $200 — Move Me Up</button>
+      </form>
+      <button class="btn-ghost" onclick="go('final')">No thanks, I'll stay where I am</button>
+    </div>
+
+    <!-- FINAL — recap -->
+    <div class="screen" id="screen-final">
+      <h2>You're all set 💌</h2>
+      <div class="sub">Here's the plan.</div>
+      <div class="recap" id="recapBox"></div>
+      <button class="btn btn-primary" onclick="copyPlan()">Copy the plan</button>
+      <button class="btn-ghost" onclick="restart()">Start over</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- fake payment result modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div style="font-size:34px;">😂</div>
+    <p id="modalText"></p>
+    <button class="btn btn-primary" onclick="closeModal()">Got it</button>
+  </div>
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   EDIT ME — personalize the whole experience from here
+   --------------------------------------------------------- */
+const CONFIG = {
+  crushName: "Queen",            // shown in the waitlist disclaimer
+  guys: ["Johnson", "Mark", "Liston", "Tre", "Ray", "Elvis", "Daren"], // full order, top to bottom
+  upgradePrice: 120,             // fake checkout price
+  foods: [
+    { emoji: "🍝", label: "Italian" },
+    { emoji: "🍱", label: "Japanese" },
+    { emoji: "🌮", label: "Mexican" },
+    { emoji: "🦞", label: "Seafood" },
+    { emoji: "🍖", label: "BBQ" },
+    { emoji: "🥩", label: "Steakhouse" },
+  ],
+  // { weekday: 0=Sun..6=Sat, time: "7:00 PM", tag: "..." }
+  nights: [
+    { weekday: 5, time: "7:00 PM", tag: "Friday night energy 🔥" },
+    { weekday: 6, time: "6:30 PM", tag: "Chill Saturday 🌙" },
+    { weekday: 4, time: "8:00 PM", tag: "Thirsty Thursday 🍹" },
+    { weekday: 5, time: "7:30 PM", tag: "Second Friday's better 😌", weeksAhead: 1 },
+  ],
+};
+
+let state = { who: null, food: null, night: null };
+
+/* ---------- Screen 0: who are you ---------- */
+const nameList = document.getElementById('nameList');
+CONFIG.guys.forEach((name) => {
+  const el = document.createElement('div');
+  el.className = 'night';
+  el.innerHTML = `<div class="day">${name}</div>`;
+  el.onclick = () => {
+    document.querySelectorAll('#nameList .night').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    state.who = name;
+    document.getElementById('nameNext').disabled = false;
+  };
+  nameList.appendChild(el);
+});
+
+function go(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('screen-' + name);
+  target.classList.add('active');
+  const step = target.dataset.step;
+  document.querySelectorAll('.dots span').forEach(d => {
+    d.classList.toggle('on', step !== undefined && d.dataset.step === step);
+  });
+}
+
+/* ---------- Screen 1: the ask ---------- */
+const noPhrases = ["Wrong answer 😉", "Try again", "That's not an option", "Nice try"];
+let noClicks = 0;
+document.getElementById('noBtn').addEventListener('click', () => {
+  document.getElementById('wrongMsg').textContent = noPhrases[noClicks % noPhrases.length];
+  noClicks++;
+});
+
+/* ---------- Screen 2: food ---------- */
+const foodGrid = document.getElementById('foodGrid');
+CONFIG.foods.forEach((f, i) => {
+  const el = document.createElement('div');
+  el.className = 'opt';
+  el.innerHTML = `<span class="emoji">${f.emoji}</span><span class="label">${f.label}</span>`;
+  el.onclick = () => {
+    document.querySelectorAll('#foodGrid .opt').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    state.food = f.label;
+    document.getElementById('foodNext').disabled = false;
+  };
+  foodGrid.appendChild(el);
+});
+
+/* ---------- Screen 3: night ---------- */
+function nextDateFor(weekday, weeksAhead) {
+  const d = new Date();
+  const add = ((weekday - d.getDay() + 7) % 7 || 7) + (7 * (weeksAhead || 0));
+  d.setDate(d.getDate() + add);
+  return d;
+}
+const dayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+const nightList = document.getElementById('nightList');
+CONFIG.nights.forEach((n) => {
+  const date = nextDateFor(n.weekday, n.weeksAhead);
+  const el = document.createElement('div');
+  el.className = 'night';
+  const dayLabel = dayFmt.format(date);
+  el.innerHTML = `<div class="day">${dayLabel}</div><div class="time">${n.time}</div><div class="tag">${n.tag}</div>`;
+  el.onclick = () => {
+    document.querySelectorAll('.night').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    state.night = `${dayLabel} · ${n.time}`;
+    document.getElementById('nightNext').disabled = false;
+  };
+  nightList.appendChild(el);
+});
+
+/* ---------- Screen 4: waitlist ---------- */
+function renderWaitlist() {
+  document.getElementById('waitlistNote').textContent =
+    `*Remember, this is not a date. This is the line to date ${CONFIG.crushName}.`;
+  const rows = document.getElementById('waitlistRows');
+  rows.innerHTML = '';
+  const full = CONFIG.guys;
+  const yourPos = full.indexOf(state.who) + 1;
+  full.forEach((name, idx) => {
+    const pos = idx + 1;
+    const isYou = pos === yourPos;
+    const status = isYou ? "you're here ✨" : (pos < yourPos ? "before you" : "after you");
+    const row = document.createElement('div');
+    row.className = 'wrow' + (isYou ? ' me' : '');
+    row.innerHTML = `<span class="who">#${pos} ${name}</span><span class="status">${status}</span>`;
+    rows.appendChild(row);
+  });
+  document.getElementById('upgradeLabel').textContent = `Priority Upgrade — Move to #${yourPos - 1}`;
+}
+
+/* ---------- Screen 5: checkout ---------- */
+document.getElementById('upgradePrice').textContent = `$${CONFIG.upgradePrice}`;
+document.getElementById('payBtn').textContent = `Pay $${CONFIG.upgradePrice} — Move Me Up`;
+
+document.getElementById('cardNum').addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0,16).replace(/(.{4})/g, '$1 ').trim();
+});
+document.getElementById('cardExp').addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0,4).replace(/(\d{2})(\d)/, '$1 / $2');
+});
+document.getElementById('cardCvv').addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0,4);
+});
+
+function fakePay(e) {
+  e.preventDefault();
+  const stillAt = CONFIG.guys.indexOf(state.who) + 1;
+  document.getElementById('modalText').innerHTML =
+    `No real charges here — this checkout is just for laughs.<br>You're still #${stillAt}, but points for trying.`;
+  document.getElementById('overlay').classList.add('show');
+  return false;
+}
+function closeModal() {
+  document.getElementById('overlay').classList.remove('show');
+  go('final');
+}
+
+/* ---------- Final recap ---------- */
+function fillRecap() {
+  document.getElementById('recapBox').innerHTML = `
+    <div>🙋 &nbsp;<b>${state.who || 'You'}</b></div>
+    <div>🍽️ &nbsp;<b>${state.food || 'Your pick'}</b></div>
+    <div>🗓️ &nbsp;<b>${state.night || 'A night soon'}</b></div>
+  `;
+}
+const finalObserver = new MutationObserver(() => {
+  if (document.getElementById('screen-final').classList.contains('active')) fillRecap();
+});
+finalObserver.observe(document.getElementById('screen-final'), { attributes: true });
+
+function copyPlan() {
+  const text = `Date plan: ${state.food || 'TBD'} on ${state.night || 'TBD'} 💌`;
+  navigator.clipboard?.writeText(text);
+  const btn = event.target;
+  const original = btn.textContent;
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => btn.textContent = original, 1500);
+}
+
+function restart() {
+  state = { who: null, food: null, night: null };
+  document.querySelectorAll('.opt, .night').forEach(o => o.classList.remove('selected'));
+  document.getElementById('foodNext').disabled = true;
+  document.getElementById('nightNext').disabled = true;
+  document.getElementById('nameNext').disabled = true;
+  document.getElementById('wrongMsg').textContent = '';
+  document.getElementById('payForm').reset();
+  go('name');
+}
+
+go('name');
+</script>
+</body>
+</html>
