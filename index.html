@@ -579,8 +579,29 @@ function fillRecap() {
     <div>🗓️ &nbsp;<b>${state.night || 'A night soon'}</b></div>
   `;
 }
+/* ---------- Notify Queen when someone finishes ---------- */
+const FORM_ENDPOINT = "https://formspree.io/f/xzezevly";
+async function sendResponse() {
+  try {
+    await fetch(FORM_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        name: state.who || "Unknown",
+        food: state.food || "Not picked",
+        night: state.night || "Not picked",
+      }),
+    });
+  } catch (err) {
+    // Fail silently — a notification hiccup shouldn't interrupt their experience
+  }
+}
+
 const finalObserver = new MutationObserver(() => {
-  if (document.getElementById('screen-final').classList.contains('active')) fillRecap();
+  if (document.getElementById('screen-final').classList.contains('active')) {
+    fillRecap();
+    sendResponse();
+  }
 });
 finalObserver.observe(document.getElementById('screen-final'), { attributes: true });
 
